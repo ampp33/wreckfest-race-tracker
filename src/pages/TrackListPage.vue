@@ -1,0 +1,124 @@
+<template>
+  <div class="max-w-6xl mx-auto px-4 py-6">
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+      <div>
+        <h1 class="text-2xl font-bold">Tracks</h1>
+        <p class="text-sm text-slate-500">
+          Pick a track to view its variations and race history.
+          Press <kbd class="px-1 py-0.5 text-xs bg-slate-200 dark:bg-slate-700 rounded">Q</kbd> for quick add.
+        </p>
+      </div>
+      <div class="flex items-center gap-2">
+        <input
+          v-model="search"
+          type="text"
+          placeholder="Search tracks..."
+          class="w-full sm:w-64 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand"
+        />
+        <button
+          type="button"
+          class="px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+          @click="onExport"
+        >
+          Export
+        </button>
+        <label class="px-3 py-2 text-xs border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">
+          Import
+          <input type="file" accept="application/json" class="hidden" @change="onImport" />
+        </label>
+      </div>
+    </div>
+
+    <p v-if="loading" class="text-sm text-slate-500">Loading…</p>
+    <p v-else-if="!filteredTracks.length" class="text-sm text-slate-500">
+      No tracks found.
+    </p>
+    <div
+      v-else
+      class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+    >
+      <TrackCard v-for="track in filteredTracks" :key="track.id" :track="track" />
+    </div>
+  </div>
+</template>
+
+<script>
+import TrackCard from '../components/TrackCard.vue'
+import { getTracks } from '../services/trackService.js'
+import { getAllRaces, bulkInsertRaces } from '../services/raceService.js'
+import { authStore } from '../stores/authStore.js'
+import { downloadJson, readJsonFile } from '../utils/exportImport.js'
+import { pushToast } from '../stores/toastStore.js'
+
+export default {
+  name: 'TrackListPage',
+  components: { TrackCard },
+  data() {
+    return {
+      tracks: [],
+      loading: true,
+      search: ''
+    }
+  },
+  computed: {
+    filteredTracks() {
+      const q = this.search.trim().toLowerCase()
+      if (!q) return this.tracks
+      return this.tracks.filter(t => t.name.toLowerCase().includes(q))
+    }
+  },
+  async mounted() {
+    await this.loadTracks()
+  },
+  methods: {
+    async loadTracks() {
+      this.loading = true
+      try {
+        this.tracks = await getTracks()
+      } catch (err) {
+        pushToast(err.message || 'Failed to load tracks', 'error')
+      } finally {
+        this.loading = false
+      }
+    },
+    async onExport() {
+      try {
+        const races = await getAllRaces()
+        downloadJson(`wreckfest-races-${Date.now()}.json`, { races })
+        pushToast('Exported races', 'success')
+      } catch (err) {
+        pushToast(err.message || 'Export failed', 'error')
+      }
+    },
+    async onImport(event) {
+      const file = event.target.files && event.target.files[0]
+      if (!file) return
+      try {
+        const parsed = await readJsonFile(file)
+        const races = parsed && Array.isArray(parsed.races) ? parsed.races : null
+        if (!races || !races.length) {
+          pushToast('No races found in file', 'error')
+          return
+        }
+        const userId = authStore.user && authStore.user.id
+        const cleaned = races.map(r => ({
+          datetime: r.datetime,
+          track_variation_id: r.track_variation_id,
+          vehicle_id: r.vehicle_id || null,
+          tuning: r.tuning ?? null,
+          place: r.place || null,
+          lap_time_ms: r.lap_time_ms ?? null,
+          total_time_ms: r.total_time_ms ?? null,
+          notes: r.notes || null
+        }))
+        await bulkInsertRaces(cleaned, userId)
+        pushToast(`Imported ${cleaned.length} races`, 'success')
+      } catch (err) {
+        pushToast(err.message || 'Import failed', 'error')
+      } finally {
+        event.target.value = ''
+      }
+    }
+  }
+}
+</script>

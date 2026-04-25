@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#app {
+  min-height: 100vh;
+}
+
+/* Disable layout-shifting transitions while still letting Tailwind's
+ * `transition` utilities work where intentionally applied. The spec asks
+ * for "minimal animations" in service of fast input. */
+* {
+  transition-duration: 100ms;
+}
