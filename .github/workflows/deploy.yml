@@ -34,10 +34,7 @@ jobs:
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-          # Set VITE_BASE_PATH to "/<repo-name>/" if you're hosting under a
-          # project page (https://user.github.io/<repo-name>/). For a user/org
-          # site (https://user.github.io/) leave it as "/" or unset.
-          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || '/' }}
+          VITE_BASE_PATH: /wreckfest-race-tracker/
         run: npm run build
 
       - name: Upload artifact
