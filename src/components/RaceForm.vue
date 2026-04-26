@@ -9,7 +9,7 @@
           ref="datetimeInput"
           v-model="form.datetime"
           type="datetime-local"
-          class="w-full max-w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          class="w-full min-w-0 max-w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
         />
       </div>
 
