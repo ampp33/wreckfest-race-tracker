@@ -96,7 +96,6 @@
         <input
           :value="form.lapTime"
           type="text"
-          inputmode="decimal"
           class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
           placeholder="1:23.456"
           @input="form.lapTime = $event.target.value.replace(/[^0-9:.]/g, '')"
@@ -110,7 +109,6 @@
         <input
           :value="form.totalTime"
           type="text"
-          inputmode="decimal"
           class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
           placeholder="6:12.000"
           @input="form.totalTime = $event.target.value.replace(/[^0-9:.]/g, '')"
