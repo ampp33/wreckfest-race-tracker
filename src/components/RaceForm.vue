@@ -1,98 +1,46 @@
 <template>
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
-    <div class="flex gap-3">
-
-      <div class="flex-1 grid grid-cols-2 gap-3 content-start">
-        <div class="col-span-2">
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-            Date / time
-          </label>
-          <input
-            ref="datetimeInput"
-            v-model="form.datetime"
-            type="datetime-local"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-            Vehicle
-          </label>
-          <select
-            v-model="form.vehicleId"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-          >
-            <option :value="null">— none —</option>
-            <option v-for="v in vehicles" :key="v.id" :value="v.id">
-              {{ v.name }}
-            </option>
-          </select>
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-            Tuning
-          </label>
-          <input
-            v-model.number="form.tuning"
-            type="number"
-            min="0"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-            Place
-          </label>
-          <input
-            v-model="form.place"
-            type="text"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-            placeholder="1st"
-          />
-        </div>
-
-        <div>
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-            Lap time
-          </label>
-          <input
-            v-model="form.lapTime"
-            type="text"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-            placeholder="1:23.456"
-          />
-        </div>
-
-        <div class="col-span-2">
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-            Total time (optional)
-          </label>
-          <input
-            v-model="form.totalTime"
-            type="text"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
-            placeholder="6:12.000"
-          />
-        </div>
-
-        <div class="col-span-2">
-          <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
-            Notes (Ctrl+Enter to save)
-          </label>
-          <textarea
-            ref="notesInput"
-            v-model="form.notes"
-            rows="2"
-            class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 resize-none"
-            @input="autoExpand"
-          />
-        </div>
+    <div class="grid grid-cols-2 gap-3">
+      <div class="col-span-2">
+        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          Date / time
+        </label>
+        <input
+          ref="datetimeInput"
+          v-model="form.datetime"
+          type="datetime-local"
+          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+        />
       </div>
 
-      <div class="rounded bg-slate-100 dark:bg-slate-900 px-3 py-1 space-y-1 shrink-0 w-[27rem]">
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          Vehicle
+        </label>
+        <select
+          v-model="form.vehicleId"
+          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+        >
+          <option :value="null">— none —</option>
+          <option v-for="v in vehicles" :key="v.id" :value="v.id">
+            {{ v.name }}
+          </option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          Tuning
+        </label>
+        <input
+          v-model.number="form.tuning"
+          type="number"
+          min="0"
+          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+        />
+      </div>
+
+      <div class="col-span-2 rounded bg-slate-100 dark:bg-slate-900 px-3 py-1 space-y-1">
         <div v-for="(cfg, i) in tuningSliderConfig" :key="i">
           <div class="text-xs font-bold uppercase text-slate-800 dark:text-white tracking-widest mb-0 mt-3">{{ cfg.label }}</div>
           <div class="relative flex items-center">
@@ -123,6 +71,55 @@
             <span class="block translate-x-1/2">{{ cfg.right }}</span>
           </div>
         </div>
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          Place
+        </label>
+        <input
+          v-model="form.place"
+          type="text"
+          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          placeholder="1st"
+        />
+      </div>
+
+      <div>
+        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          Lap time
+        </label>
+        <input
+          v-model="form.lapTime"
+          type="text"
+          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          placeholder="1:23.456"
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          Total time (optional)
+        </label>
+        <input
+          v-model="form.totalTime"
+          type="text"
+          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
+          placeholder="6:12.000"
+        />
+      </div>
+
+      <div class="col-span-2">
+        <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
+          Notes (Ctrl+Enter to save)
+        </label>
+        <textarea
+          ref="notesInput"
+          v-model="form.notes"
+          rows="2"
+          class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2 resize-none"
+          @input="autoExpand"
+        />
       </div>
 
     </div>
