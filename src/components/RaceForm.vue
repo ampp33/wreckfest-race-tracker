@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="onSubmit" @keydown="onFormKeydown">
     <div class="grid grid-cols-2 gap-3">
-      <div class="col-span-2 min-w-0">
+      <div class="col-span-2 min-w-0 overflow-hidden">
         <label class="block text-xs uppercase tracking-wide text-slate-500 mb-1">
           Date / time
         </label>
