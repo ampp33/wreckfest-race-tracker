@@ -18,6 +18,7 @@
           Vehicle
         </label>
         <select
+          ref="vehicleInput"
           v-model="form.vehicleId"
           class="w-full rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-700 px-3 py-2"
         >
@@ -230,7 +231,7 @@ export default {
   },
   mounted() {
     if (this.autofocus) {
-      this.$nextTick(() => this.$refs.datetimeInput && this.$refs.datetimeInput.focus())
+      this.$nextTick(() => this.$refs.vehicleInput && this.$refs.vehicleInput.focus())
     }
     this.autoExpand()
   },
