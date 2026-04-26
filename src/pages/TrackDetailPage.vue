@@ -1,5 +1,5 @@
 <template>
-  <div class="max-w-6xl mx-auto px-4 py-6">
+  <div class="max-w-6xl mx-auto px-4 py-6 pb-24">
     <p v-if="loading" class="text-sm text-slate-500">Loading…</p>
 
     <div v-else-if="!track">
