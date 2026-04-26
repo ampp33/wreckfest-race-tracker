@@ -1,12 +1,12 @@
 <template>
   <div
     v-if="qa.open"
-    class="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/50 p-2 sm:p-4"
+    class="fixed inset-0 z-40 flex items-start sm:items-center justify-center bg-black/50 p-2 sm:p-4 overflow-hidden"
     @mousedown.self="onClose"
     @keydown.esc.stop="onClose"
   >
     <div
-      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[95vh] overflow-y-auto overscroll-contain"
+      class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg p-4 sm:p-6 max-h-[92svh] sm:max-h-[95vh] overflow-y-auto overscroll-contain"
       role="dialog"
       aria-modal="true"
       aria-labelledby="quick-add-title"
