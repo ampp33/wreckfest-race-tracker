@@ -34,15 +34,21 @@ create table if not exists public.vehicles (
 -- if they're missing. Safe to leave in even on a fresh install.
 alter table public.vehicles add column if not exists image_url text;
 
--- Goals: per-user lap-time goal for a track variation.
+-- Goals: per-user lap-time goal and notes for a track variation.
 create table if not exists public.goals (
     id uuid primary key default gen_random_uuid(),
     user_id uuid not null references auth.users(id) on delete cascade,
     track_variation_id uuid not null references public.track_variations(id) on delete cascade,
-    goal_lap_time_ms integer not null check (goal_lap_time_ms > 0),
+    goal_lap_time_ms integer check (goal_lap_time_ms is null or goal_lap_time_ms > 0),
+    notes text,
     updated_at timestamptz not null default now(),
     unique (user_id, track_variation_id)
 );
+
+-- For existing installs: migrate goals table to new shape.
+alter table public.goals alter column goal_lap_time_ms drop not null;
+alter table public.goals add column if not exists notes text;
+drop table if exists public.track_variation_notes;
 
 -- Races: the core record.
 -- Times stored as integer milliseconds for precise comparisons.
