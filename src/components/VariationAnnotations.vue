@@ -70,7 +70,7 @@ export default {
   emits: ['save'],
   data() {
     return {
-      collapsed: false,
+      collapsed: true,
       editMode: false,
       selectedId: null,
       workingAnnotations: [],
