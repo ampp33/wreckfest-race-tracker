@@ -99,6 +99,15 @@
         </div>
       </div>
 
+      <!-- Turn Annotations -->
+      <VariationAnnotations
+        v-if="currentVariation"
+        :image-url="variationMapImage"
+        :alt="currentVariation.name"
+        :annotations="annotations"
+        @save="onSaveAnnotations"
+      />
+
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
           <div class="text-xs uppercase text-slate-500">Goal lap time</div>
@@ -186,10 +195,12 @@
 <script>
 import RaceRow from '../components/RaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
+import VariationAnnotations from '../components/VariationAnnotations.vue'
 import { getTrackBySlug, findVariation } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
 import { getRacesByVariation, updateRace, deleteRace } from '../services/raceService.js'
 import { getGoalForVariation, upsertGoal } from '../services/goalService.js'
+import { getAnnotationsForVariation, saveAnnotations } from '../services/annotationService.js'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { authStore } from '../stores/authStore.js'
@@ -201,7 +212,7 @@ import { openQuickAdd, quickAddStore } from '../stores/quickAddStore.js'
 
 export default {
   name: 'TrackDetailPage',
-  components: { RaceRow, LapTimeChart, LapTimeInput },
+  components: { RaceRow, LapTimeChart, LapTimeInput, VariationAnnotations },
   data() {
     return {
       loading: true,
@@ -211,6 +222,7 @@ export default {
       races: [],
       goal: null,
       goalInputMs: null,
+      annotations: [],
       quickAddStore,
       showImageModal: false,
       notesEditMode: false,
@@ -240,6 +252,11 @@ export default {
     trackNotesHtml() {
       if (!this.trackNotes) return ''
       return DOMPurify.sanitize(marked.parse(this.trackNotes))
+    },
+    variationMapImage() {
+      return this.track && this.currentVariation
+        ? variationImageUrl(this.track.slug, this.currentVariation.slug)
+        : ''
     }
   },
   watch: {
@@ -282,7 +299,7 @@ export default {
           pushToast('Variation not found', 'error')
           return
         }
-        await Promise.all([this.loadRaces(), this.loadGoal()])
+        await Promise.all([this.loadRaces(), this.loadGoal(), this.loadAnnotations()])
       } catch (err) {
         pushToast(err.message || 'Failed to load track', 'error')
       } finally {
@@ -295,6 +312,9 @@ export default {
     async loadGoal() {
       this.goal = await getGoalForVariation(this.currentVariation.id)
       this.goalInputMs = this.goal ? this.goal.goal_lap_time_ms : null
+    },
+    async loadAnnotations() {
+      this.annotations = await getAnnotationsForVariation(this.currentVariation.id)
     },
     openImageModal() {
       this.showImageModal = true
@@ -323,6 +343,19 @@ export default {
         pushToast('Notes saved', 'success', 1500)
       } catch (err) {
         pushToast(err.message || 'Failed to save notes', 'error')
+      }
+    },
+    async onSaveAnnotations(annotations) {
+      try {
+        const userId = authStore.user && authStore.user.id
+        this.annotations = await saveAnnotations({
+          variationId: this.currentVariation.id,
+          annotations,
+          userId
+        })
+        pushToast('Annotations saved', 'success', 1500)
+      } catch (err) {
+        pushToast(err.message || 'Failed to save annotations', 'error')
       }
     },
     onAddRow() {
