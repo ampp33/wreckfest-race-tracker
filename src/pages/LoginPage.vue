@@ -84,7 +84,10 @@ export default {
     },
     redirectPath() {
       const target = this.$route.query.redirect
-      return typeof target === 'string' && target ? target : '/'
+      if (typeof target === 'string' && target.startsWith('/') && !target.startsWith('//')) {
+        return target
+      }
+      return '/'
     }
   },
   methods: {
