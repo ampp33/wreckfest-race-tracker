@@ -24,6 +24,7 @@ import {
   Legend,
   Filler
 } from 'chart.js'
+import { markRaw } from 'vue'
 import { prefsStore } from '../stores/prefsStore.js'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend, Filler)
@@ -146,7 +147,7 @@ export default {
       const tickColor = dark ? '#94a3b8' : '#64748b'
       const legendColor = dark ? '#cbd5e1' : '#475569'
 
-      this.chart = new Chart(this.$refs.canvas, {
+      this.chart = markRaw(new Chart(this.$refs.canvas, {
         type: 'line',
         data: this.chartData,
         options: {
@@ -201,7 +202,7 @@ export default {
             }
           }
         }
-      })
+      }))
     }
   }
 }
