@@ -6,7 +6,7 @@
       class="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-gray-700 rounded transition-colors"
       @click="collapsed = !collapsed"
     >
-      <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">Turn Annotations</span>
+      <span class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">Turn Annotations</span>
       <svg
         xmlns="http://www.w3.org/2000/svg"
         class="w-4 h-4 text-slate-400 transition-transform"

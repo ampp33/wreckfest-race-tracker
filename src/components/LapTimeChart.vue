@@ -3,7 +3,7 @@
     v-if="hasData"
     class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4 mb-6"
   >
-    <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">
+    <div class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
       Lap Times Over Time
     </div>
     <div class="relative h-64">

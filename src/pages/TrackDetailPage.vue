@@ -128,6 +128,7 @@
       <LapTimeChart :races="races" :vehicles="vehicles" />
 
       <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700">
+        <div class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200 px-3 pt-3 pb-2">Logged Races</div>
         <table class="min-w-full text-sm">
           <thead class="bg-slate-50 dark:bg-gray-900 text-left text-xs uppercase text-slate-500">
             <tr>
