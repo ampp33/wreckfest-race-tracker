@@ -43,6 +43,47 @@
         </div>
       </div>
 
+      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">Recent Races - last 24 hours ({{ stats.recentRaces.length }})</h2>
+        <p v-if="!stats.recentRaces.length" class="text-sm text-slate-500 mt-1">
+          No races in the past 24 hours.
+        </p>
+        <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700">
+          <li
+            v-for="race in stats.recentRaces"
+            :key="race.id"
+            class="flex items-center justify-between py-2.5 text-sm"
+          >
+            <div>
+              <router-link
+                v-if="race.trackSlug && race.variationSlug"
+                :to="`/track/${race.trackSlug}/${race.variationSlug}`"
+                class="text-brand hover:underline"
+              >
+                {{ race.trackName }}
+                <span class="text-slate-500 font-normal">— {{ race.variationName }}</span>
+              </router-link>
+              <span v-else class="text-slate-700 dark:text-slate-300">{{ race.trackName }}</span>
+              <div class="text-xs text-slate-400 mt-0.5">{{ formatDate(race.datetime) }}</div>
+            </div>
+            <div class="flex items-center gap-4 shrink-0 ml-4">
+              <div class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">vehicle</div>
+                <div class="text-sm">{{ race.vehicleName }}</div>
+              </div>
+              <div v-if="race.place != null" class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">place</div>
+                <div class="text-sm font-semibold">{{ race.place }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">lap</div>
+                <div class="font-mono text-sm">{{ race.lapTimeMs != null ? format(race.lapTimeMs) : '—' }}</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
       <RaceActivityChart
         :hourly-counts="stats.raceCounts.hourlyCounts"
         :daily-counts="stats.raceCounts.dailyCounts"
@@ -136,7 +177,8 @@ export default {
         biggestImprovements: [],
         totalRaces: 0,
         goalProgress: [],
-        raceCounts: { hourlyCounts: new Array(24).fill(0), dailyCounts: {} }
+        raceCounts: { hourlyCounts: new Array(24).fill(0), dailyCounts: {} },
+        recentRaces: []
       }
     }
   },
@@ -152,6 +194,15 @@ export default {
   methods: {
     format(ms) {
       return formatMsToTime(ms)
+    },
+    formatDate(isoString) {
+      const d = new Date(isoString)
+      return d.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
   }
 }

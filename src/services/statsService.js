@@ -20,7 +20,8 @@ export async function getStats() {
     biggestImprovements: computeBiggestImprovements(races, tracks),
     totalRaces: races.length,
     goalProgress: computeGoalProgress(races, tracks, goals),
-    raceCounts: computeRaceCounts(races)
+    raceCounts: computeRaceCounts(races),
+    recentRaces: computeRecentRaces(races, tracks, vehicles)
   }
 }
 
@@ -117,6 +118,27 @@ function computeRaceCounts(races) {
   }
 
   return { hourlyCounts, dailyCounts }
+}
+
+function computeRecentRaces(races, tracks, vehicles) {
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000
+  return races
+    .filter(r => new Date(r.datetime).getTime() >= cutoff)
+    .map(r => {
+      const found = findVariationName(tracks, r.track_variation_id)
+      const vehicle = vehicles.find(v => v.id === r.vehicle_id)
+      return {
+        id: r.id,
+        datetime: r.datetime,
+        trackName: found?.trackName ?? '—',
+        trackSlug: found?.trackSlug ?? null,
+        variationName: found?.variationName ?? '—',
+        variationSlug: found?.variationSlug ?? null,
+        vehicleName: vehicle?.name ?? '—',
+        lapTimeMs: r.lap_time_ms,
+        place: r.place
+      }
+    })
 }
 
 function localDateStr(date) {
