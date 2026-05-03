@@ -133,6 +133,7 @@ import { getGoalForVariation, upsertGoal } from '../services/goalService.js'
 import { authStore } from '../stores/authStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { pushToast } from '../stores/toastStore.js'
+import { quickAddStore, setOnRaceSaved, clearOnRaceSaved } from '../stores/quickAddStore.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
@@ -186,7 +187,14 @@ export default {
     }
   },
   async mounted() {
+    setOnRaceSaved((variationId) => {
+      if (variationId === this.currentVariation?.id) this.loadRaces()
+    })
     await this.loadAll()
+  },
+  unmounted() {
+    quickAddStore.currentPageVariationId = null
+    clearOnRaceSaved()
   },
   methods: {
     variationImageUrl,
@@ -206,6 +214,7 @@ export default {
           pushToast('Variation not found', 'error')
           return
         }
+        quickAddStore.currentPageVariationId = this.currentVariation.id
         await Promise.all([this.loadRaces(), this.loadGoal()])
       } catch (err) {
         pushToast(err.message || 'Failed to load track', 'error')

@@ -71,7 +71,7 @@
 import TrackVariationPicker from './TrackVariationPicker.vue'
 import RaceForm from './RaceForm.vue'
 import { variationImageUrl } from '../utils/imageUrl.js'
-import { quickAddStore, closeQuickAdd } from '../stores/quickAddStore.js'
+import { quickAddStore, closeQuickAdd, notifyRaceSaved } from '../stores/quickAddStore.js'
 import { prefsStore } from '../stores/prefsStore.js'
 import { authStore } from '../stores/authStore.js'
 import { getTracks } from '../services/trackService.js'
@@ -177,6 +177,7 @@ export default {
         prefsStore.lastTuning = created.tuning
         prefsStore.lastTrackVariationId = created.track_variation_id
         pushToast('Race saved', 'success', 2000)
+        notifyRaceSaved(this.chosen.variation.id)
         closeQuickAdd()
       } catch (err) {
         pushToast(err.message || 'Failed to save race', 'error')
