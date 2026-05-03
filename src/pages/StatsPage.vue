@@ -44,7 +44,96 @@
       </div>
 
       <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
-        <h2 class="font-semibold mb-3">Biggest improvements (oldest → newest lap)</h2>
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">Recent Races - last 24 hours ({{ stats.recentRaces.length }})</h2>
+        <p v-if="!stats.recentRaces.length" class="text-sm text-slate-500 mt-1">
+          No races in the past 24 hours.
+        </p>
+        <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700">
+          <li
+            v-for="race in stats.recentRaces"
+            :key="race.id"
+            class="flex items-center justify-between py-2.5 text-sm"
+          >
+            <div>
+              <router-link
+                v-if="race.trackSlug && race.variationSlug"
+                :to="`/track/${race.trackSlug}/${race.variationSlug}`"
+                class="text-brand hover:underline"
+              >
+                {{ race.trackName }}
+                <span class="text-slate-500 font-normal">— {{ race.variationName }}</span>
+              </router-link>
+              <span v-else class="text-slate-700 dark:text-slate-300">{{ race.trackName }}</span>
+              <div class="text-xs text-slate-400 mt-0.5">{{ formatDate(race.datetime) }}</div>
+            </div>
+            <div class="flex items-center gap-4 shrink-0 ml-4">
+              <div class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">vehicle</div>
+                <div class="text-sm">{{ race.vehicleName }}</div>
+              </div>
+              <div v-if="race.place != null" class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">place</div>
+                <div class="text-sm font-semibold">{{ race.place }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">lap</div>
+                <div class="font-mono text-sm">{{ race.lapTimeMs != null ? format(race.lapTimeMs) : '—' }}</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <RaceActivityChart
+        :hourly-counts="stats.raceCounts.hourlyCounts"
+        :daily-counts="stats.raceCounts.dailyCounts"
+      />
+
+      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">Goal progress</h2>
+        <p v-if="!stats.goalProgress.length" class="text-sm text-slate-500">
+          No goals set — open a track and set a goal lap time to track your progress here.
+        </p>
+        <ul v-else class="divide-y divide-slate-100 dark:divide-slate-700">
+          <li
+            v-for="row in stats.goalProgress"
+            :key="row.trackSlug + row.variationSlug"
+            class="flex items-center justify-between py-2.5 text-sm"
+          >
+            <router-link
+              :to="`/track/${row.trackSlug}/${row.variationSlug}`"
+              class="text-brand hover:underline"
+            >
+              {{ row.trackName }}
+              <span class="text-slate-500 font-normal">— {{ row.variationName }}</span>
+            </router-link>
+            <div class="flex items-center gap-4 shrink-0 ml-4">
+              <div class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">goal</div>
+                <div class="font-mono text-sm">{{ format(row.goalMs) }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">best</div>
+                <div class="font-mono text-sm">{{ row.pbMs != null ? format(row.pbMs) : '—' }}</div>
+              </div>
+              <div class="text-right min-w-[3.5rem]">
+                <div class="text-xs uppercase text-slate-500 leading-none mb-0.5">delta</div>
+                <div
+                  v-if="row.deltaMs != null"
+                  class="font-mono text-sm font-semibold"
+                  :class="row.deltaMs <= 0 ? 'text-green-600' : 'text-red-500'"
+                >
+                  {{ row.deltaMs <= 0 ? '-' : '+' }}{{ format(Math.abs(row.deltaMs)) }}
+                </div>
+                <div v-else class="font-mono text-sm text-slate-400">—</div>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4">
+        <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200 mb-3">Biggest improvements (oldest → newest lap)</h2>
         <p v-if="!stats.biggestImprovements.length" class="text-sm text-slate-500">
           No improvement data yet — log more laps on the same variation.
         </p>
@@ -74,9 +163,11 @@
 import { getStats } from '../services/statsService.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import { pushToast } from '../stores/toastStore.js'
+import RaceActivityChart from '../components/RaceActivityChart.vue'
 
 export default {
   name: 'StatsPage',
+  components: { RaceActivityChart },
   data() {
     return {
       loading: true,
@@ -84,7 +175,10 @@ export default {
         mostUsedVehicle: null,
         mostRacedVariation: null,
         biggestImprovements: [],
-        totalRaces: 0
+        totalRaces: 0,
+        goalProgress: [],
+        raceCounts: { hourlyCounts: new Array(24).fill(0), dailyCounts: {} },
+        recentRaces: []
       }
     }
   },
@@ -100,6 +194,15 @@ export default {
   methods: {
     format(ms) {
       return formatMsToTime(ms)
+    },
+    formatDate(isoString) {
+      const d = new Date(isoString)
+      return d.toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      })
     }
   }
 }

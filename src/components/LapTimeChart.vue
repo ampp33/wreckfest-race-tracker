@@ -3,7 +3,7 @@
     v-if="hasData"
     class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-4 mb-6"
   >
-    <div class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-4">
+    <div class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200">
       Lap Times Over Time
     </div>
     <div class="relative h-64">
@@ -24,6 +24,7 @@ import {
   Legend,
   Filler
 } from 'chart.js'
+import { markRaw } from 'vue'
 import { prefsStore } from '../stores/prefsStore.js'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Tooltip, Legend, Filler)
@@ -146,7 +147,7 @@ export default {
       const tickColor = dark ? '#94a3b8' : '#64748b'
       const legendColor = dark ? '#cbd5e1' : '#475569'
 
-      this.chart = new Chart(this.$refs.canvas, {
+      this.chart = markRaw(new Chart(this.$refs.canvas, {
         type: 'line',
         data: this.chartData,
         options: {
@@ -201,7 +202,7 @@ export default {
             }
           }
         }
-      })
+      }))
     }
   }
 }

@@ -1,22 +1,27 @@
 import { getAllRaces } from './raceService.js'
 import { getVehicles } from './vehicleService.js'
 import { getTracks } from './trackService.js'
+import { getAllGoals } from './goalService.js'
 
 // Aggregate stats for the Stats page. We pull everything client-side because
 // the dataset per user is small (hundreds of races at most) and avoids round
 // trips for each metric.
 export async function getStats() {
-  const [races, vehicles, tracks] = await Promise.all([
+  const [races, vehicles, tracks, goals] = await Promise.all([
     getAllRaces(),
     getVehicles(),
-    getTracks()
+    getTracks(),
+    getAllGoals()
   ])
 
   return {
     mostUsedVehicle: computeMostUsedVehicle(races, vehicles),
     mostRacedVariation: computeMostRacedVariation(races, tracks),
     biggestImprovements: computeBiggestImprovements(races, tracks),
-    totalRaces: races.length
+    totalRaces: races.length,
+    goalProgress: computeGoalProgress(races, tracks, goals),
+    raceCounts: computeRaceCounts(races),
+    recentRaces: computeRecentRaces(races, tracks, vehicles)
   }
 }
 
@@ -59,6 +64,88 @@ function computeBiggestImprovements(races, tracks) {
 
   improvements.sort((a, b) => b.deltaMs - a.deltaMs)
   return improvements.slice(0, 5)
+}
+
+function computeGoalProgress(races, tracks, goals) {
+  const pbByVariation = {}
+  for (const race of races) {
+    if (race.lap_time_ms == null) continue
+    const vid = race.track_variation_id
+    if (pbByVariation[vid] == null || race.lap_time_ms < pbByVariation[vid]) {
+      pbByVariation[vid] = race.lap_time_ms
+    }
+  }
+
+  const result = []
+  for (const goal of goals) {
+    if (!goal.goal_lap_time_ms) continue
+    const found = findVariationName(tracks, goal.track_variation_id)
+    if (!found) continue
+    const pb = pbByVariation[goal.track_variation_id] ?? null
+    result.push({
+      ...found,
+      goalMs: goal.goal_lap_time_ms,
+      pbMs: pb,
+      deltaMs: pb != null ? pb - goal.goal_lap_time_ms : null
+    })
+  }
+
+  // Beat goal (negative delta) first, then closest to goal, then no PB yet
+  result.sort((a, b) => {
+    if (a.deltaMs == null && b.deltaMs == null) return 0
+    if (a.deltaMs == null) return 1
+    if (b.deltaMs == null) return -1
+    return a.deltaMs - b.deltaMs
+  })
+
+  return result
+}
+
+function computeRaceCounts(races) {
+  const now = new Date()
+  const todayStr = localDateStr(now)
+
+  const hourlyCounts = new Array(24).fill(0)
+  const dailyCounts = {}
+
+  for (const race of races) {
+    const d = new Date(race.datetime)
+    const dateStr = localDateStr(d)
+    dailyCounts[dateStr] = (dailyCounts[dateStr] || 0) + 1
+    if (dateStr === todayStr) {
+      hourlyCounts[d.getHours()]++
+    }
+  }
+
+  return { hourlyCounts, dailyCounts }
+}
+
+function computeRecentRaces(races, tracks, vehicles) {
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000
+  return races
+    .filter(r => new Date(r.datetime).getTime() >= cutoff)
+    .map(r => {
+      const found = findVariationName(tracks, r.track_variation_id)
+      const vehicle = vehicles.find(v => v.id === r.vehicle_id)
+      return {
+        id: r.id,
+        datetime: r.datetime,
+        trackName: found?.trackName ?? '—',
+        trackSlug: found?.trackSlug ?? null,
+        variationName: found?.variationName ?? '—',
+        variationSlug: found?.variationSlug ?? null,
+        vehicleName: vehicle?.name ?? '—',
+        lapTimeMs: r.lap_time_ms,
+        place: r.place
+      }
+    })
+}
+
+function localDateStr(date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
 }
 
 function countBy(items, keyFn) {

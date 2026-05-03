@@ -14,7 +14,8 @@
             v-if="track"
             :src="trackImage"
             :alt="track.name"
-            class="w-32 h-24 sm:w-40 sm:h-32 object-contain bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 shrink-0"
+            class="w-auto h-24 sm:h-32 object-cover rounded border border-slate-200 dark:border-slate-700 shrink-0 cursor-pointer hover:opacity-90 transition-opacity"
+            @click="openImageModal"
           />
           <div class="min-w-0">
             <router-link to="/" class="text-xs text-slate-500 hover:text-brand">← All tracks</router-link>
@@ -52,6 +53,61 @@
         </button>
       </div>
 
+      <!-- Track Notes -->
+      <div class="mb-4 bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
+        <div v-if="!notesEditMode" class="flex items-start gap-2">
+          <div
+            v-if="trackNotesHtml"
+            class="flex-1 text-sm prose prose-sm dark:prose-invert max-w-none"
+            v-html="trackNotesHtml"
+          />
+          <p
+            v-else
+            class="flex-1 text-sm text-slate-400 dark:text-slate-500 italic"
+          >Add notes about this track…</p>
+          <button
+            type="button"
+            class="text-slate-400 hover:text-brand shrink-0 mt-0.5"
+            title="Edit notes"
+            @click="startEditNotes"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+            </svg>
+          </button>
+        </div>
+        <div v-else class="flex flex-col gap-2">
+          <textarea
+            ref="notesTextarea"
+            v-model="notesInput"
+            rows="4"
+            class="w-full text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-gray-900 text-slate-800 dark:text-slate-200 px-2 py-1.5 resize-y focus:outline-none focus:ring-1 focus:ring-brand"
+            placeholder="Notes about this track…"
+          />
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              class="px-3 py-1 text-sm rounded border border-slate-300 dark:border-slate-600 hover:border-slate-500 dark:hover:border-slate-400"
+              @click="cancelEditNotes"
+            >Cancel</button>
+            <button
+              type="button"
+              class="px-3 py-1 text-sm rounded bg-brand hover:bg-brand-dark text-white font-semibold"
+              @click="saveNotes"
+            >Save</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Turn Annotations -->
+      <VariationAnnotations
+        v-if="currentVariation"
+        :image-url="variationMapImage"
+        :alt="currentVariation.name"
+        :annotations="annotations"
+        @save="onSaveAnnotations"
+      />
+
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         <div class="bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700 p-3">
           <div class="text-xs uppercase text-slate-500">Goal lap time</div>
@@ -72,6 +128,7 @@
       <LapTimeChart :races="races" :vehicles="vehicles" />
 
       <div class="overflow-x-auto bg-white dark:bg-gray-800 rounded border border-slate-200 dark:border-slate-700">
+        <div class="text-sm font-semibold uppercase tracking-wider text-slate-800 dark:text-slate-200 px-3 pt-3 pb-2">Logged Races</div>
         <table class="min-w-full text-sm">
           <thead class="bg-slate-50 dark:bg-gray-900 text-left text-xs uppercase text-slate-500">
             <tr>
@@ -87,14 +144,6 @@
             </tr>
           </thead>
           <tbody>
-            <InlineAddRaceRow
-              v-if="addingRow"
-              :vehicles="vehicles"
-              :defaults="addRowDefaults"
-              :saving="saving"
-              @submit="onCreateRace"
-              @cancel="addingRow = false"
-            />
             <RaceRow
               v-for="race in races"
               :key="race.id"
@@ -105,7 +154,7 @@
               @update="onUpdateRace"
               @delete="onDeleteRace"
             />
-            <tr v-if="!races.length && !addingRow">
+            <tr v-if="!races.length">
               <td colspan="9" class="py-6 text-center text-sm text-slate-500">
                 No races yet — click <span class="font-semibold">+ Add Race</span> to log one.
               </td>
@@ -115,43 +164,70 @@
       </div>
     </div>
   </div>
+
+  <!-- Hero image modal -->
+  <Teleport to="body">
+    <div
+      v-if="showImageModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      @click.self="closeImageModal"
+    >
+      <div class="relative max-w-4xl w-full mx-4">
+        <button
+          type="button"
+          class="absolute -top-8 right-0 text-white/80 hover:text-white"
+          aria-label="Close"
+          @click="closeImageModal"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+        <img
+          :src="trackImage"
+          :alt="track && track.name"
+          class="w-full max-h-[85vh] object-contain rounded"
+        />
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script>
 import RaceRow from '../components/RaceRow.vue'
-import InlineAddRaceRow from '../components/InlineAddRaceRow.vue'
 import LapTimeChart from '../components/LapTimeChart.vue'
+import VariationAnnotations from '../components/VariationAnnotations.vue'
 import { getTrackBySlug, findVariation } from '../services/trackService.js'
 import { getVehicles } from '../services/vehicleService.js'
-import {
-  getRacesByVariation,
-  createRace,
-  updateRace,
-  deleteRace
-} from '../services/raceService.js'
+import { getRacesByVariation, updateRace, deleteRace } from '../services/raceService.js'
 import { getGoalForVariation, upsertGoal } from '../services/goalService.js'
+import { getAnnotationsForVariation, saveAnnotations } from '../services/annotationService.js'
+import { marked } from 'marked'
+import DOMPurify from 'dompurify'
 import { authStore } from '../stores/authStore.js'
-import { prefsStore } from '../stores/prefsStore.js'
 import { pushToast } from '../stores/toastStore.js'
-import { quickAddStore, setOnRaceSaved, clearOnRaceSaved } from '../stores/quickAddStore.js'
+import { quickAddStore, setOnRaceSaved, clearOnRaceSaved, openQuickAdd } from '../stores/quickAddStore.js'
 import { formatMsToTime } from '../utils/timeFormat.js'
 import LapTimeInput from '../components/LapTimeInput.vue'
 import { trackImageUrl, variationImageUrl } from '../utils/imageUrl.js'
 
 export default {
   name: 'TrackDetailPage',
-  components: { RaceRow, InlineAddRaceRow, LapTimeChart, LapTimeInput },
+  components: { RaceRow, LapTimeChart, LapTimeInput, VariationAnnotations },
   data() {
     return {
       loading: true,
-      saving: false,
       track: null,
       currentVariation: null,
       vehicles: [],
       races: [],
       goal: null,
       goalInputMs: null,
-      addingRow: false
+      annotations: [],
+      quickAddStore,
+      showImageModal: false,
+      notesEditMode: false,
+      notesInput: ''
     }
   },
   computed: {
@@ -171,11 +247,17 @@ export default {
     pbDisplay() {
       return this.personalBestMs != null ? formatMsToTime(this.personalBestMs) : '—'
     },
-    addRowDefaults() {
-      return {
-        vehicleId: prefsStore.lastVehicleId,
-        tuning: prefsStore.lastTuning
-      }
+    trackNotes() {
+      return this.goal ? (this.goal.notes || '') : ''
+    },
+    trackNotesHtml() {
+      if (!this.trackNotes) return ''
+      return DOMPurify.sanitize(marked.parse(this.trackNotes))
+    },
+    variationMapImage() {
+      return this.track && this.currentVariation
+        ? variationImageUrl(this.track.slug, this.currentVariation.slug)
+        : ''
     }
   },
   watch: {
@@ -184,6 +266,12 @@ export default {
         this.loadAll()
       },
       immediate: false
+    },
+    'quickAddStore.open'(isOpen) {
+      if (!isOpen && this._quickAddOpenedHere) {
+        this._quickAddOpenedHere = false
+        this.loadRaces()
+      }
     }
   },
   async mounted() {
@@ -191,6 +279,11 @@ export default {
       if (variationId === this.currentVariation?.id) this.loadRaces()
     })
     await this.loadAll()
+    this._escHandler = (e) => { if (e.key === 'Escape') this.closeImageModal() }
+    document.addEventListener('keydown', this._escHandler)
+  },
+  beforeUnmount() {
+    document.removeEventListener('keydown', this._escHandler)
   },
   unmounted() {
     quickAddStore.currentPageVariationId = null
@@ -215,7 +308,7 @@ export default {
           return
         }
         quickAddStore.currentPageVariationId = this.currentVariation.id
-        await Promise.all([this.loadRaces(), this.loadGoal()])
+        await Promise.all([this.loadRaces(), this.loadGoal(), this.loadAnnotations()])
       } catch (err) {
         pushToast(err.message || 'Failed to load track', 'error')
       } finally {
@@ -229,28 +322,54 @@ export default {
       this.goal = await getGoalForVariation(this.currentVariation.id)
       this.goalInputMs = this.goal ? this.goal.goal_lap_time_ms : null
     },
-    onAddRow() {
-      this.addingRow = true
+    async loadAnnotations() {
+      this.annotations = await getAnnotationsForVariation(this.currentVariation.id)
     },
-    async onCreateRace(payload) {
-      const userId = authStore.user && authStore.user.id
-      this.saving = true
+    openImageModal() {
+      this.showImageModal = true
+    },
+    closeImageModal() {
+      this.showImageModal = false
+    },
+    startEditNotes() {
+      this.notesInput = this.trackNotes
+      this.notesEditMode = true
+      this.$nextTick(() => this.$refs.notesTextarea?.focus())
+    },
+    cancelEditNotes() {
+      this.notesEditMode = false
+    },
+    async saveNotes() {
       try {
-        const created = await createRace(
-          { ...payload, track_variation_id: this.currentVariation.id },
+        const userId = authStore.user && authStore.user.id
+        this.goal = await upsertGoal({
+          variationId: this.currentVariation.id,
+          goalLapTimeMs: this.goalLapTimeMs,
+          notes: this.notesInput,
           userId
-        )
-        this.races.unshift(created)
-        prefsStore.lastVehicleId = created.vehicle_id
-        prefsStore.lastTuning = created.tuning
-        prefsStore.lastTrackVariationId = created.track_variation_id
-        this.addingRow = false
-        pushToast('Race added', 'success', 1500)
+        })
+        this.notesEditMode = false
+        pushToast('Notes saved', 'success', 1500)
       } catch (err) {
-        pushToast(err.message || 'Failed to add race', 'error')
-      } finally {
-        this.saving = false
+        pushToast(err.message || 'Failed to save notes', 'error')
       }
+    },
+    async onSaveAnnotations(annotations) {
+      try {
+        const userId = authStore.user && authStore.user.id
+        this.annotations = await saveAnnotations({
+          variationId: this.currentVariation.id,
+          annotations,
+          userId
+        })
+        pushToast('Annotations saved', 'success', 1500)
+      } catch (err) {
+        pushToast(err.message || 'Failed to save annotations', 'error')
+      }
+    },
+    onAddRow() {
+      this._quickAddOpenedHere = true
+      openQuickAdd(this.currentVariation.id)
     },
     async onUpdateRace({ id, patch }) {
       try {
@@ -280,6 +399,7 @@ export default {
         this.goal = await upsertGoal({
           variationId: this.currentVariation.id,
           goalLapTimeMs: ms,
+          notes: this.trackNotes,
           userId
         })
         pushToast('Goal saved', 'success', 1500)
